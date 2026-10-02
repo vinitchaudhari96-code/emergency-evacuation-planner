@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Emergency Evacuation Planner</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>🚨 Emergency Evacuation Planner</h1>
+        <p>Discrete Mathematics Mini Project</p>
+    </header>
+<!-- System Status -->
+
+<section class="status-panel">
+
+    <div class="status-card">
+        <span class="status-title">🚪 Exit Status</span>
+        <strong id="statusExit">AVAILABLE</strong>
+    </div>
+
+
+    <div class="status-card">
+        <span class="status-title">🚧 Blocked Paths</span>
+        <strong id="statusBlocked">0</strong>
+    </div>
+
+
+    <div class="status-card">
+        <span class="status-title">🧭 Route Status</span>
+        <strong id="statusRoute">NOT CALCULATED</strong>
+    </div>
+
+</section>
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- Route Selection -->
+        <section class="card">
+            <h2>🧭 Find Evacuation Route</h2>
+
+            <div class="input-group">
+
+                <div>
+                    <label for="start">Starting Location</label>
+
+                    <select id="start">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="G">G</option>
+                    </select>
+                </div>
+
+
+                <div>
+                    <label for="exit">Emergency Exit</label>
+
+                    <select id="exit">
+                        <option value="EXIT">EXIT</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button id="findRouteBtn">Find Safe Route</button>
+        </section>
+
+
+        <!-- Building Map -->
+        <section class="card">
+            <h2>🗺️ Building Map</h2>
+
+            <div class="map">
+
+    <!-- Graph edges -->
+    <svg class="graph-lines" viewBox="0 0 600 400">
+
+    <!-- Top row -->
+    <line id="edge-A-B" x1="90" y1="80" x2="300" y2="80"></line>
+    <line id="edge-B-C" x1="300" y1="80" x2="510" y2="80"></line>
+
+    <!-- Vertical connections -->
+    <line id="edge-A-D" x1="90" y1="80" x2="90" y2="200"></line>
+    <line id="edge-B-E" x1="300" y1="80" x2="300" y2="200"></line>
+    <line id="edge-C-F" x1="510" y1="80" x2="510" y2="200"></line>
+
+    <!-- Middle row -->
+    <line id="edge-D-E" x1="90" y1="200" x2="300" y2="200"></line>
+    <line id="edge-E-F" x1="300" y1="200" x2="510" y2="200"></line>
+
+    <!-- Bottom connections -->
+    <line id="edge-E-G" x1="300" y1="200" x2="300" y2="320"></line>
+    <line id="edge-G-EXIT" x1="300" y1="320" x2="510" y2="320"></line>
+
+</svg>
+
+
+    <!-- Graph vertices -->
+    <div class="node" id="node-A">A</div>
+    <div class="node" id="node-B">B</div>
+    <div class="node" id="node-C">C</div>
+
+    <div class="node" id="node-D">D</div>
+    <div class="node" id="node-E">E</div>
+    <div class="node" id="node-F">F</div>
+
+    <div class="node" id="node-G">G</div>
+    <div class="node exit-node" id="node-EXIT">EXIT</div>
+
+</div>
+<!-- Map Legend -->
+
+    <div class="legend">
+
+        <h3>Map Legend</h3>
+
+        <div class="legend-items">
+
+            <div class="legend-item">
+                <span class="legend-circle start-legend"></span>
+                <span>Starting Location</span>
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-circle route-legend"></span>
+                <span>Evacuation Route</span>
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-circle exit-legend"></span>
+                <span>Emergency Exit</span>
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-line blocked-legend"></span>
+                <span>Blocked Path</span>
+            </div>
+
+        </div>
+
+    </div>
+        </section>
+
+
+        <!-- Result -->
+        <section class="card">
+            <h2>📍 Route Result</h2>
+
+            <p id="routeResult">
+                Select a starting location and click
+                <strong>Find Safe Route</strong>.
+            </p>
+
+            <p id="routeStatus"></p>
+        </section>
+        
+        <!-- Path Management -->
+<section class="card">
+    <h2>🚧 Path Management</h2>
+
+    <p>Select a connection to simulate a blocked path.</p>
+
+    <div class="input-group">
+
+        <div>
+            <label for="blockedPath">Select Path</label>
+
+            <select id="blockedPath">
+
+                <option value="A-B">A ↔ B</option>
+                <option value="B-C">B ↔ C</option>
+                <option value="A-D">A ↔ D</option>
+                <option value="B-E">B ↔ E</option>
+                <option value="C-F">C ↔ F</option>
+                <option value="D-E">D ↔ E</option>
+                <option value="E-F">E ↔ F</option>
+                <option value="E-G">E ↔ G</option>
+                <option value="G-EXIT">G ↔ EXIT</option>
+
+            </select>
+        </div>
+
+    </div>
+
+    <button id="blockPathBtn">Block Path</button>
+    <button id="resetPathsBtn">Reset All Paths</button>
+
+    <p id="blockedPathResult">
+        No paths are currently blocked.
+    </p>
+
+</section>
+<!-- Reachability Check -->
+<section class="card">
+    <h2>🔍 Reachability Check</h2>
+
+    <p>
+        Check whether one location can reach another location
+        using the available paths.
+    </p>
+
+    <div class="input-group">
+
+        <div>
+            <label for="reachStart">From Location</label>
+
+            <select id="reachStart">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+                <option value="EXIT">EXIT</option>
+            </select>
+        </div>
+
+
+        <div>
+            <label for="reachDestination">To Location</label>
+
+            <select id="reachDestination">
+                <option value="EXIT">EXIT</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+            </select>
+        </div>
+
+    </div>
+
+    <button id="checkReachabilityBtn">
+        Check Reachability
+    </button>
+
+    <p id="reachabilityResult">
+        Select two locations and check whether they are reachable.
+    </p>
+
+</section>
+<!-- Logic Safety Check -->
+<section class="card">
+    <h2>🧠 Logic-Based Safety Check</h2>
+
+    <p>
+    The route is considered safe when a usable route exists
+    AND the emergency exit is available.
+    </p>
+<div class="input-group">
+
+    <div>
+        <label for="exitAvailability">
+            Emergency Exit Status
+        </label>
+
+        <select id="exitAvailability">
+
+            <option value="available">
+                Available
+            </option>
+
+            <option value="unavailable">
+                Unavailable
+            </option>
+
+        </select>
+    </div>
+
+</div>
+    <div class="logic-box">
+
+        <div class="logic-item">
+            <strong>P</strong>
+            <span>Usable route exists</span>
+            <span id="logicP">—</span>
+        </div>
+
+        <div class="logic-item">
+            <strong>Q</strong>
+            <span>Emergency exit is reachable</span>
+            <span id="logicQ">—</span>
+        </div>
+
+        <div class="logic-item">
+            <strong>P ∧ Q</strong>
+            <span>Route is safe</span>
+            <span id="logicResult">—</span>
+        </div>
+
+    </div>
+
+</section>
+     
+<!-- Adjacency Matrix -->
+<section class="card">
+
+    <h2>📊 Graph Relation — Adjacency Matrix</h2>
+
+    <p>
+        The matrix represents the relation between connected
+        locations. 1 means a connection exists and 0 means
+        there is no direct connection.
+    </p>
+
+    <button id="showMatrixBtn">
+        Show Current Matrix
+    </button>
+
+    <div id="matrixContainer" class="matrix-container">
+        Click the button to display the matrix.
+    </div>
+
+</section>
+        <!-- Emergency Resources -->
+<section class="card">
+    <h2>🧯 Emergency Resource Finder</h2>
+
+    <p>
+        Find the emergency resource available at a location.
+    </p>
+
+    <div class="input-group">
+
+        <div>
+            <label for="resourceLocation">
+                Select Location
+            </label>
+
+            <select id="resourceLocation">
+
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+                <option value="EXIT">EXIT</option>
+
+            </select>
+        </div>
+
+    </div>
+
+    <button id="findResourceBtn">
+        Find Resource
+    </button>
+
+    <div id="resourceResult" class="resource-result">
+
+        Select a location to find an emergency resource.
+
+    </div>
+
+</section>
+
+    </main>
+<!-- Discrete Mathematics Concepts -->
+
+<section class="card">
+
+    <h2>📚 Discrete Mathematics Used</h2>
+
+    <div class="concepts">
+
+        <div class="concept">
+            <h3>🕸️ Graph Theory</h3>
+            <p>
+                Building locations are represented as vertices
+                and corridors are represented as edges.
+            </p>
+        </div>
+
+
+        <div class="concept">
+            <h3>🚶 Paths & BFS</h3>
+            <p>
+                Breadth-First Search is used to find an
+                evacuation path from a location to the exit.
+            </p>
+        </div>
+
+
+        <div class="concept">
+            <h3>🔗 Relations</h3>
+            <p>
+                Connections between locations form a binary
+                relation represented using an adjacency matrix.
+            </p>
+        </div>
+
+
+        <div class="concept">
+            <h3>🔍 Warshall's Algorithm</h3>
+            <p>
+                Transitive closure is used to determine whether
+                one location can reach another.
+            </p>
+        </div>
+
+
+        <div class="concept">
+            <h3>🧠 Logic</h3>
+            <p>
+                A route is considered safe when both a usable
+                route and an available exit exist: P ∧ Q.
+            </p>
+        </div>
+
+
+        <div class="concept">
+            <h3>🔢 Functions</h3>
+            <p>
+                Emergency resources are mapped to locations using
+                a location-to-resource function.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+    <!-- Mathematical Representation -->
+
+<section class="card">
+
+    <h2>📐 Mathematical Representation</h2>
+
+    <p>
+        The building is represented as an undirected graph
+        G = (V, E).
+    </p>
+
+
+    <div class="math-box">
+
+        <h3>Vertices (V)</h3>
+
+        <p>
+            V = {A, B, C, D, E, F, G, EXIT}
+        </p>
+
+
+        <h3>Edges (E)</h3>
+
+        <p>
+            E = {
+            (A,B),
+            (B,C),
+            (A,D),
+            (B,E),
+            (C,F),
+            (D,E),
+            (E,F),
+            (E,G),
+            (G,EXIT)
+            }
+        </p>
+
+
+        <h3>Graph Representation</h3>
+
+        <p>
+            Each location is a vertex and each corridor
+            between two locations is an edge.
+        </p>
+
+    </div>
+
+</section>
+
+<!-- Footer -->
+
+<footer class="footer">
+
+    <h3>🚨 Emergency Evacuation Planner</h3>
+
+    <p>
+        A Discrete Mathematics Mini Project
+    </p>
+
+    <p>
+        Graphs • BFS • Relations • Warshall • Logic • Functions
+    </p>
+
+</footer>
+
+    <script src="script.js"></script>
+    
+
+</body>
+
+</html>

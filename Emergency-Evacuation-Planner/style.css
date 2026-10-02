@@ -1,0 +1,138 @@
+/* ==========================================================================
+   DAISYUI CUSTOM COMPONENT STYLES & SVG MAP
+   Emergency Evacuation Planner - Discrete Mathematics Mini Project
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+code, kbd, pre, .font-mono {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+/* Building Map Container */
+.map-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: 400px;
+  margin: 0 auto;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .map-canvas-wrapper,
+[data-theme="night"] .map-canvas-wrapper {
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .map-canvas-wrapper {
+  background-color: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* SVG Blueprint grid */
+.grid-line {
+  stroke: rgba(148, 163, 184, 0.12);
+  stroke-width: 1;
+}
+
+/* SVG Corridors */
+.corridor-line {
+  stroke: #64748b;
+  stroke-width: 7;
+  stroke-linecap: round;
+  cursor: pointer;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.corridor-line:hover {
+  stroke: #94a3b8;
+  stroke-width: 9;
+}
+
+.corridor-line.blocked {
+  stroke: #ef4444;
+  stroke-width: 6;
+  stroke-dasharray: 8 6;
+  filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.6));
+}
+
+.corridor-line.active-route {
+  stroke: #10b981;
+  stroke-width: 9;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+}
+
+.corridor-hitbox {
+  stroke: transparent;
+  stroke-width: 24;
+  cursor: pointer;
+}
+
+/* SVG Room Nodes */
+.svg-room-node {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.svg-room-node:hover circle {
+  filter: brightness(1.2);
+  stroke-width: 4;
+}
+
+.node-circle {
+  fill: #3b82f6;
+  stroke: #60a5fa;
+  stroke-width: 3;
+  transition: all 0.2s ease;
+}
+
+.node-circle.start {
+  fill: #2563eb;
+  stroke: #93c5fd;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.8));
+}
+
+.node-circle.route {
+  fill: #10b981;
+  stroke: #6ee7b7;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.7));
+}
+
+.node-circle.exit {
+  fill: #dc2626;
+  stroke: #fca5a5;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.7));
+}
+
+.node-circle.exit-blocked {
+  fill: #475569;
+  stroke: #64748b;
+  filter: none;
+}
+
+.node-text {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 15px;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.node-subtext {
+  fill: rgba(255, 255, 255, 0.85);
+  font-size: 10px;
+  pointer-events: none;
+  text-anchor: middle;
+}

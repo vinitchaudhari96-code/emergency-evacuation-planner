@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚨 Emergency Evacuation Planner | Discrete Mathematics</title>
+
+  <!-- DaisyUI CSS (Local with CDN fallback) -->
+  <link href="daisyui.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+  <!-- Tailwind CSS Engine (Local with CDN fallback) -->
+  <script src="tailwind.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Map Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Vue 3 Runtime (Local with CDN fallback) -->
+  <script src="vue.global.prod.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-base-200 min-h-screen text-base-content antialiased">
+
+  <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- Top Navbar -->
+    <header class="navbar bg-base-100 rounded-box shadow-md border border-base-300 mb-6 px-4">
+      <div class="flex-1 items-center gap-3">
+        <span class="text-3xl">🚨</span>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Emergency Evacuation Planner</h1>
+          <p class="text-xs text-base-content/70">Discrete Mathematics Mini Project • Graph Theory & BFS</p>
+        </div>
+      </div>
+
+      <div class="flex-none gap-2">
+        <button class="btn btn-sm btn-ghost gap-2" @click="toggleTheme">
+          <span>{{ currentTheme === 'night' ? '☀️' : '🌙' }}</span>
+          <span class="hidden sm:inline">{{ currentTheme === 'night' ? 'Light Mode' : 'Dark Mode' }}</span>
+        </button>
+        <button class="btn btn-sm btn-outline btn-error gap-1" @click="resetAllPaths">
+          <span>🔄</span> Reset
+        </button>
+      </div>
+    </header>
+
+    <!-- Top Status Ribbon -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <!-- Exit Status -->
+      <div class="stat bg-base-100 rounded-box shadow border border-base-300 py-3">
+        <div class="stat-title text-xs uppercase font-bold text-base-content/60">Emergency Exit</div>
+        <div class="stat-value text-lg font-mono flex items-center gap-2 mt-1">
+          <span class="badge" :class="exitStatus === 'available' ? 'badge-success' : 'badge-error'">
+            {{ exitStatus === 'available' ? 'AVAILABLE' : 'UNAVAILABLE' }}
+          </span>
+          <span id="statusExit" class="hidden">{{ exitStatus === 'available' ? 'AVAILABLE' : 'UNAVAILABLE' }}</span>
+        </div>
+        <div class="stat-actions mt-2">
+          <button class="btn btn-xs btn-outline" @click="exitStatus = (exitStatus === 'available' ? 'unavailable' : 'available')">
+            Toggle Exit Status
+          </button>
+        </div>
+      </div>
+
+      <!-- Blocked Paths -->
+      <div class="stat bg-base-100 rounded-box shadow border border-base-300 py-3">
+        <div class="stat-title text-xs uppercase font-bold text-base-content/60">Blocked Corridors</div>
+        <div class="stat-value text-lg font-mono flex items-center gap-2 mt-1">
+          <span class="badge" :class="blockedEdges.size > 0 ? 'badge-warning' : 'badge-neutral'">
+            <span id="statusBlocked">{{ blockedEdges.size }}</span> Blocked
+          </span>
+        </div>
+        <div class="stat-desc mt-2">
+          {{ blockedEdges.size === 0 ? 'All corridors clear' : Array.from(blockedEdges).join(', ') }}
+        </div>
+      </div>
+
+      <!-- Route Status -->
+      <div class="stat bg-base-100 rounded-box shadow border border-base-300 py-3">
+        <div class="stat-title text-xs uppercase font-bold text-base-content/60">Route Status</div>
+        <div class="stat-value text-lg font-mono flex items-center gap-2 mt-1">
+          <span class="badge" :class="isRouteSafe ? 'badge-success' : (calculatedRoute ? 'badge-warning' : 'badge-error')">
+            <span id="statusRoute">{{ routeStatusText }}</span>
+          </span>
+        </div>
+        <div class="stat-desc mt-2">
+          {{ calculatedRoute ? `${calculatedRoute.length - 1} steps required` : 'No valid path' }}
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace (2 Column Grid) -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Controls Column (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+
+        <!-- Route Finder Card -->
+        <section class="card bg-base-100 shadow border border-base-300">
+          <div class="card-body p-5">
+            <h2 class="card-title text-base flex items-center gap-2">
+              <span>🧭</span> Find Evacuation Route
+            </h2>
+            <p class="text-xs text-base-content/70">Select your starting room to calculate the safest route via BFS.</p>
+
+            <div class="grid grid-cols-2 gap-3 mt-2">
+              <div class="form-control">
+                <label class="label py-1" for="start">
+                  <span class="label-text text-xs font-semibold">Start Location</span>
+                </label>
+                <select id="start" v-model="selectedStart" class="select select-bordered select-sm w-full">
+                  <option v-for="id in startOptions" :key="id" :value="id">Zone {{ id }}</option>
+                </select>
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1" for="exit">
+                  <span class="label-text text-xs font-semibold">Destination Exit</span>
+                </label>
+                <select id="exit" v-model="selectedExit" class="select select-bordered select-sm w-full">
+                  <option value="EXIT">Emergency EXIT</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="findRouteBtn" class="btn btn-error btn-sm text-white w-full mt-3 gap-2" @click="calculateSafeRoute">
+              <span>⚡</span> Find Safe Route
+            </button>
+
+            <!-- Route Result Alert -->
+            <div class="alert mt-3 py-2 text-xs flex flex-col items-start gap-1" :class="isRouteSafe ? 'alert-success' : (calculatedRoute ? 'alert-warning' : 'alert-error')">
+              <div class="font-bold flex items-center gap-1">
+                <span>{{ isRouteSafe ? '✅' : '⚠️' }}</span>
+                <span>{{ isRouteSafe ? 'Safe Route Confirmed' : (calculatedRoute ? 'Route Found - Exit Compromised' : 'No Route Available') }}</span>
+              </div>
+              <div v-if="calculatedRoute" class="font-mono flex flex-wrap gap-1 items-center mt-1">
+                <template v-for="(nodeId, idx) in calculatedRoute" :key="nodeId">
+                  <span class="badge badge-sm" :class="idx === 0 ? 'badge-primary' : (nodeId === 'EXIT' ? 'badge-error' : 'badge-neutral')">
+                    {{ nodeId }}
+                  </span>
+                  <span v-if="idx < calculatedRoute.length - 1" class="text-xs">➜</span>
+                </template>
+              </div>
+              <div v-else class="text-xs opacity-90">
+                All routes from Zone {{ selectedStart }} are blocked by hazards.
+              </div>
+            </div>
+
+            <!-- Legacy Route Result Paragraphs -->
+            <p id="routeResult" class="hidden">
+              {{ calculatedRoute ? 'Route Found: ' + calculatedRoute.join(' → ') : 'No route available.' }}
+            </p>
+            <p id="routeStatus" class="hidden">{{ routeStatusText }}</p>
+          </div>
+        </section>
+
+        <!-- Corridor Hazard Management Card -->
+        <section class="card bg-base-100 shadow border border-base-300">
+          <div class="card-body p-5">
+            <h2 class="card-title text-base flex items-center gap-2">
+              <span>🚧</span> Path Management
+            </h2>
+            <p class="text-xs text-base-content/70">Simulate a blocked corridor due to smoke, fire, or collapse.</p>
+
+            <div class="form-control mt-2">
+              <label class="label py-1" for="blockedPath">
+                <span class="label-text text-xs font-semibold">Select Corridor</span>
+              </label>
+              <select id="blockedPath" v-model="selectedBlockedEdge" class="select select-bordered select-sm w-full">
+                <option v-for="edge in edges" :key="edge.id" :value="edge.id">
+                  {{ edge.id.replace('-', ' ↔ ') }}
+                </option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <button id="blockPathBtn" class="btn btn-warning btn-sm gap-1" @click="blockSelectedEdge">
+                <span>⚠️</span> Toggle Path
+              </button>
+              <button id="resetPathsBtn" class="btn btn-outline btn-sm gap-1" @click="resetAllPaths">
+                <span>🔄</span> Reset Paths
+              </button>
+            </div>
+
+            <div id="blockedPathResult" class="bg-base-200 rounded p-2 text-xs font-mono text-base-content/80 mt-2">
+              {{ blockedEdges.size === 0 ? 'No paths are currently blocked.' : `Blocked: ${Array.from(blockedEdges).join(', ')}` }}
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Map Column (7 cols) -->
+      <section class="lg:col-span-7">
+        <div class="card bg-base-100 shadow border border-base-300">
+          <div class="card-body p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title text-base flex items-center gap-2">
+                <span>🗺️</span> Building Map
+              </h2>
+              <span class="text-xs text-base-content/60">Click node to start • Click corridor to block</span>
+            </div>
+
+            <!-- SVG Map Canvas -->
+            <div class="map-canvas-wrapper my-2">
+              <svg class="graph-lines" viewBox="0 0 600 400" width="100%" height="100%">
+                <defs>
+                  <pattern id="dot-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="2" r="1" class="grid-line" />
+                  </pattern>
+                </defs>
+
+                <!-- Grid Background -->
+                <rect width="600" height="400" fill="url(#dot-grid)" />
+
+                <!-- Graph Edges / Corridors -->
+                <g v-for="edge in edges" :key="edge.id">
+                  <!-- Invisible wide hitbox for easy clicking -->
+                  <line 
+                    :x1="edge.x1" :y1="edge.y1" :x2="edge.x2" :y2="edge.y2"
+                    class="corridor-hitbox"
+                    @click="toggleEdge(edge.id)"
+                  />
+                  <!-- Visual corridor line -->
+                  <line 
+                    :id="'edge-' + edge.id"
+                    :x1="edge.x1" :y1="edge.y1" :x2="edge.x2" :y2="edge.y2"
+                    class="corridor-line"
+                    :class="{ 
+                      'blocked': isEdgeBlocked(edge.u, edge.v),
+                      'active-route': isEdgeInRoute(edge.u, edge.v)
+                    }"
+                    @click="toggleEdge(edge.id)"
+                  />
+                </g>
+
+                <!-- Graph Nodes / Rooms -->
+                <g 
+                  v-for="node in nodes" 
+                  :key="node.id"
+                  class="svg-room-node"
+                  @click="selectNodeAsStart(node.id)"
+                >
+                  <circle 
+                    :id="'node-' + node.id"
+                    :cx="node.x" 
+                    :cy="node.y" 
+                    :r="node.id === 'EXIT' ? 30 : 26"
+                    class="node-circle"
+                    :class="{
+                      'exit': node.id === 'EXIT',
+                      'exit-blocked': node.id === 'EXIT' && exitStatus !== 'available',
+                      'start': selectedStart === node.id,
+                      'route': calculatedRoute && calculatedRoute.includes(node.id) && selectedStart !== node.id && node.id !== 'EXIT'
+                    }"
+                  />
+                  <text :x="node.x" :y="node.id === 'EXIT' ? node.y - 5 : node.y - 2" class="node-text">
+                    {{ node.id }}
+                  </text>
+                  <text :x="node.x" :y="node.y + 14" class="node-subtext">
+                    {{ node.icon }}
+                  </text>
+                </g>
+              </svg>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center justify-center gap-4 text-xs mt-2 pt-2 border-t border-base-200">
+              <span class="flex items-center gap-1.5"><span class="badge badge-primary badge-xs"></span> Start Node</span>
+              <span class="flex items-center gap-1.5"><span class="badge badge-success badge-xs"></span> Safe Route</span>
+              <span class="flex items-center gap-1.5"><span class="badge badge-error badge-xs"></span> Emergency Exit</span>
+              <span class="flex items-center gap-1.5"><span class="badge badge-warning badge-xs"></span> Blocked Corridor</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Discrete Mathematics Concepts Tabs -->
+    <section class="mt-8">
+      <div class="tabs tabs-boxed bg-base-100 p-1 border border-base-300 max-w-2xl mx-auto mb-4 justify-center">
+        <button class="tab text-xs sm:text-sm font-semibold" :class="{ 'tab-active': activeTab === 'matrix' }" @click="activeTab = 'matrix'">
+          📊 Adjacency Matrix
+        </button>
+        <button class="tab text-xs sm:text-sm font-semibold" :class="{ 'tab-active': activeTab === 'warshall' }" @click="activeTab = 'warshall'">
+          🔍 Reachability (Warshall)
+        </button>
+        <button class="tab text-xs sm:text-sm font-semibold" :class="{ 'tab-active': activeTab === 'logic' }" @click="activeTab = 'logic'">
+          🧠 Safety Logic (P ∧ Q)
+        </button>
+        <button class="tab text-xs sm:text-sm font-semibold" :class="{ 'tab-active': activeTab === 'resources' }" @click="activeTab = 'resources'">
+          🧯 Resources f(v)
+        </button>
+      </div>
+
+      <!-- Tab 1: Adjacency Matrix -->
+      <div v-show="activeTab === 'matrix'" class="card bg-base-100 shadow border border-base-300">
+        <div class="card-body p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base">📊 Graph Relation — Adjacency Matrix A(G)</h3>
+              <p class="text-xs text-base-content/70">1 represents an accessible corridor; 0 represents no direct connection or blocked path.</p>
+            </div>
+            <button id="showMatrixBtn" class="btn btn-xs btn-outline" @click="calculateSafeRoute">
+              Update Matrix
+            </button>
+          </div>
+
+          <div id="matrixContainer" class="overflow-x-auto mt-4">
+            <table class="table table-zebra table-sm text-center font-mono border border-base-300">
+              <thead>
+                <tr class="bg-base-200">
+                  <th></th>
+                  <th v-for="id in nodeIds" :key="id">{{ id }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, i) in adjacencyMatrix" :key="i">
+                  <th class="bg-base-200 font-bold">{{ nodeIds[i] }}</th>
+                  <td 
+                    v-for="(val, j) in row" 
+                    :key="j"
+                    :class="val === 1 ? 'font-bold text-success bg-success/10' : 'text-base-content/30'"
+                  >
+                    {{ val }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+            <div class="bg-base-200 p-2.5 rounded-box">
+              <span class="text-base-content/60 font-semibold">Symmetric Relation:</span>
+              <div class="font-bold text-success mt-0.5">Yes (A = Aᵀ)</div>
+            </div>
+            <div class="bg-base-200 p-2.5 rounded-box">
+              <span class="text-base-content/60 font-semibold">Reflexive:</span>
+              <div class="font-bold text-warning mt-0.5">No (A[i][i] = 0)</div>
+            </div>
+            <div class="bg-base-200 p-2.5 rounded-box">
+              <span class="text-base-content/60 font-semibold">Vertices |V|:</span>
+              <div class="font-bold text-info mt-0.5">8 Nodes</div>
+            </div>
+            <div class="bg-base-200 p-2.5 rounded-box">
+              <span class="text-base-content/60 font-semibold">Active Edges |E|:</span>
+              <div class="font-bold text-primary mt-0.5">{{ 9 - blockedEdges.size }} Corridors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Reachability & Warshall -->
+      <div v-show="activeTab === 'warshall'" class="card bg-base-100 shadow border border-base-300">
+        <div class="card-body p-5">
+          <h3 class="font-bold text-base">🔍 Warshall's Algorithm — Reachability Check</h3>
+          <p class="text-xs text-base-content/70">Uses transitive closure W = R* to verify whether a path exists between any two locations.</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end mt-3">
+            <div class="form-control">
+              <label class="label py-1" for="reachStart">
+                <span class="label-text text-xs font-semibold">From Location</span>
+              </label>
+              <select id="reachStart" v-model="reachStart" class="select select-bordered select-sm w-full">
+                <option v-for="id in nodeIds" :key="id" :value="id">Zone {{ id }}</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label py-1" for="reachDestination">
+                <span class="label-text text-xs font-semibold">To Location</span>
+              </label>
+              <select id="reachDestination" v-model="reachDestination" class="select select-bordered select-sm w-full">
+                <option v-for="id in nodeIds" :key="id" :value="id">Zone {{ id }}</option>
+              </select>
+            </div>
+
+            <button id="checkReachabilityBtn" class="btn btn-primary btn-sm" @click="checkReachability">
+              Check Reachability
+            </button>
+          </div>
+
+          <div id="reachabilityResult" class="alert mt-4 py-2.5 text-xs font-mono" :class="isReachable ? 'alert-success' : 'alert-error'">
+            {{ reachResultText }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Safety Logic -->
+      <div v-show="activeTab === 'logic'" class="card bg-base-100 shadow border border-base-300">
+        <div class="card-body p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base">🧠 Propositional Safety Logic</h3>
+              <p class="text-xs text-base-content/70">A route is safe when a usable route exists AND the exit is operational: P ∧ Q.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold">Exit:</span>
+              <select id="exitAvailability" v-model="exitStatus" class="select select-bordered select-xs">
+                <option value="available">Available (Q = T)</option>
+                <option value="unavailable">Unavailable (Q = F)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Logic Propositions -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            <div class="border border-base-300 rounded-box p-3 bg-base-200/50 flex items-center justify-between">
+              <div>
+                <span class="font-mono font-bold text-primary">P</span>
+                <p class="text-xs text-base-content/70">Usable route exists</p>
+              </div>
+              <span id="logicP" class="badge" :class="logicP ? 'badge-success' : 'badge-error'">
+                {{ logicP ? 'TRUE ✓' : 'FALSE ✗' }}
+              </span>
+            </div>
+
+            <div class="border border-base-300 rounded-box p-3 bg-base-200/50 flex items-center justify-between">
+              <div>
+                <span class="font-mono font-bold text-primary">Q</span>
+                <p class="text-xs text-base-content/70">Emergency exit available</p>
+              </div>
+              <span id="logicQ" class="badge" :class="logicQ ? 'badge-success' : 'badge-error'">
+                {{ logicQ ? 'TRUE ✓' : 'FALSE ✗' }}
+              </span>
+            </div>
+
+            <div class="border border-base-300 rounded-box p-3 bg-base-200/50 flex items-center justify-between">
+              <div>
+                <span class="font-mono font-bold text-primary">P ∧ Q</span>
+                <p class="text-xs text-base-content/70">Evacuation route safe</p>
+              </div>
+              <span id="logicResult" class="badge" :class="logicPandQ ? 'badge-success' : 'badge-error'">
+                {{ logicPandQ ? 'TRUE ✓' : 'FALSE ✗' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Truth Table -->
+          <div class="overflow-x-auto mt-4">
+            <table class="table table-sm text-center font-mono border border-base-300 text-xs">
+              <thead>
+                <tr class="bg-base-200">
+                  <th>P</th>
+                  <th>Q</th>
+                  <th>P ∧ Q (Safe)</th>
+                  <th>Current State</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :class="{ 'bg-primary/20 font-bold': logicP && logicQ }">
+                  <td>T</td><td>T</td><td class="text-success font-bold">T</td><td>{{ (logicP && logicQ) ? '👈 CURRENT' : '' }}</td>
+                </tr>
+                <tr :class="{ 'bg-primary/20 font-bold': logicP && !logicQ }">
+                  <td>T</td><td>F</td><td class="text-error font-bold">F</td><td>{{ (logicP && !logicQ) ? '👈 CURRENT' : '' }}</td>
+                </tr>
+                <tr :class="{ 'bg-primary/20 font-bold': !logicP && logicQ }">
+                  <td>F</td><td>T</td><td class="text-error font-bold">F</td><td>{{ (!logicP && logicQ) ? '👈 CURRENT' : '' }}</td>
+                </tr>
+                <tr :class="{ 'bg-primary/20 font-bold': !logicP && !logicQ }">
+                  <td>F</td><td>F</td><td class="text-error font-bold">F</td><td>{{ (!logicP && !logicQ) ? '👈 CURRENT' : '' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Emergency Resources -->
+      <div v-show="activeTab === 'resources'" class="card bg-base-100 shadow border border-base-300">
+        <div class="card-body p-5">
+          <h3 class="font-bold text-base">🧯 Emergency Resource Finder — Function f: V ➔ R</h3>
+          <p class="text-xs text-base-content/70">Maps each building location v ∈ V to an emergency resource f(v).</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end mt-3">
+            <div class="form-control">
+              <label class="label py-1" for="resourceLocation">
+                <span class="label-text text-xs font-semibold">Select Location</span>
+              </label>
+              <select id="resourceLocation" v-model="resourceLocation" class="select select-bordered select-sm w-full">
+                <option v-for="id in nodeIds" :key="id" :value="id">Zone {{ id }}</option>
+              </select>
+            </div>
+
+            <button id="findResourceBtn" class="btn btn-outline btn-sm">
+              Find Resource
+            </button>
+          </div>
+
+          <div id="resourceResult" class="alert alert-info mt-4 py-2.5 text-xs font-mono flex items-center gap-2">
+            <span>{{ resourceResult }}</span>
+            <span class="opacity-75">at Location {{ resourceLocation }}</span>
+          </div>
+
+          <!-- All Resource Mappings Table -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs font-mono">
+            <div v-for="n in nodes" :key="n.id" class="p-2 border border-base-300 rounded bg-base-200/40 flex items-center justify-between">
+              <span class="font-bold">Zone {{ n.id }}</span>
+              <span>{{ n.icon }} {{ n.resource }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Discrete Mathematics Concepts Section (As in design) -->
+    <section class="mt-10">
+      <div class="flex items-center gap-2.5 mb-4">
+        <span class="text-2xl">📚</span>
+        <h2 class="text-xl font-bold tracking-tight text-base-content">Discrete Mathematics Used</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 1. Graph Theory -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🕸️</span> Graph Theory
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            Building locations are represented as vertices and corridors are represented as edges.
+          </p>
+        </div>
+
+        <!-- 2. Paths & BFS -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🚶</span> Paths & BFS
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            Breadth-First Search is used to find an evacuation path from a location to the exit.
+          </p>
+        </div>
+
+        <!-- 3. Relations -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🔗</span> Relations
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            Connections between locations form a binary relation represented using an adjacency matrix.
+          </p>
+        </div>
+
+        <!-- 4. Warshall's Algorithm -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🔍</span> Warshall's Algorithm
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            Transitive closure is used to determine whether one location can reach another.
+          </p>
+        </div>
+
+        <!-- 5. Logic -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🧠</span> Logic
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            A route is considered safe when both a usable route and an available exit exist: P ∧ Q.
+          </p>
+        </div>
+
+        <!-- 6. Functions -->
+        <div class="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div class="font-bold text-base flex items-center gap-2 text-base-content">
+            <span class="text-lg">🔢</span> Functions
+          </div>
+          <p class="text-sm text-base-content/70 mt-1.5 leading-relaxed">
+            Emergency resources are mapped to locations using a location-to-resource function.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mathematical Representation Section (As in design) -->
+    <section class="mt-8 mb-4">
+      <div class="flex items-center gap-2.5 mb-1">
+        <span class="text-2xl">📐</span>
+        <h2 class="text-xl font-bold tracking-tight text-base-content">Mathematical Representation</h2>
+      </div>
+      <p class="text-sm text-base-content/70 mb-3">
+        The building is represented as an undirected graph G = (V, E).
+      </p>
+
+      <div class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm">
+        <div class="mb-4">
+          <h3 class="font-bold text-sm text-base-content">Vertices (V)</h3>
+          <p class="font-mono text-sm text-base-content/80 mt-1">
+            V = {A, B, C, D, E, F, G, EXIT}
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-bold text-sm text-base-content">Edges (E)</h3>
+          <p class="font-mono text-sm text-base-content/80 mt-1">
+            E = { (A,B), (B,C), (A,D), (B,E), (C,F), (D,E), (E,F), (E,G), (G,EXIT) }
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-sm text-base-content">Graph Representation</h3>
+          <p class="text-sm text-base-content/80 mt-1 leading-relaxed">
+            Each location is a vertex and each corridor between two locations is an edge.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-base-content/50 py-8 mt-6 border-t border-base-300">
+      <p class="font-semibold text-base-content/70">🚨 Emergency Evacuation Planner — Discrete Mathematics Mini Project</p>
+      <p class="mt-1">Graphs • Breadth-First Search (BFS) • Relations • Warshall's Algorithm • Logic • Functions</p>
+    </footer>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script src="script.js"></script>
+
+</body>
+
+</html>

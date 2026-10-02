@@ -1,0 +1,658 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f6f8;
+    color: #222;
+}
+
+
+/* Header */
+
+.header {
+    background-color: #b71c1c;
+    color: white;
+    text-align: center;
+    padding: 25px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 32px;
+}
+
+.header p {
+    margin: 8px 0 0;
+}
+
+
+/* Main container */
+
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 30px auto;
+}
+
+
+/* Cards */
+
+.card {
+    background-color: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+
+/* Input section */
+
+.input-group {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.input-group div {
+    flex: 1;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+
+/* Button */
+
+button {
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #b71c1c;
+}
+
+
+/* Building map */
+
+.map {
+    position: relative;
+    width: 600px;
+    max-width: 100%;
+    height: 400px;
+    margin: 30px auto;
+    border: 3px solid #333;
+    background-color: #fafafa;
+}
+
+
+/* Nodes */
+
+.node {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #1976d2;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    z-index: 1;
+}
+
+
+/* Node positions */
+
+#node-A {
+    left: 60px;
+    top: 50px;
+}
+
+#node-B {
+    left: 270px;
+    top: 50px;
+}
+
+#node-C {
+    left: 480px;
+    top: 50px;
+}
+
+#node-D {
+    left: 60px;
+    top: 170px;
+}
+
+#node-E {
+    left: 270px;
+    top: 170px;
+}
+
+#node-F {
+    left: 480px;
+    top: 170px;
+}
+
+#node-G {
+    left: 270px;
+    top: 290px;
+}
+
+#node-EXIT {
+    left: 480px;
+    top: 290px;
+}
+
+
+/* Exit */
+
+.exit-node {
+    background-color: #2e7d32;
+}
+
+
+/* Resources */
+
+.resources {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+.resource {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.resource span {
+    display: block;
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.resource p {
+    margin-bottom: 0;
+}
+
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+    .input-group {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .resources {
+        flex-direction: column;
+    }
+
+    .map {
+        height: 350px;
+    }
+}
+
+/* Graph connection lines */
+
+.graph-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.graph-lines line {
+    stroke: #555;
+    stroke-width: 4;
+}
+
+/* Highlighted evacuation route */
+
+.graph-lines line.route-edge {
+    stroke: #2e7d32;
+    stroke-width: 8;
+}
+
+/* Blocked graph edge */
+
+.graph-lines line.blocked-edge {
+    stroke: #777;
+    stroke-width: 8;
+    stroke-dasharray: 10, 8;
+}
+
+
+/* Secondary button */
+
+#resetPathsBtn {
+    background-color: #555;
+    margin-left: 10px;
+}
+
+#resetPathsBtn:hover {
+    background-color: #333;
+}
+
+
+/* Blocked path text */
+
+#blockedPathResult {
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+/* Reachability result */
+
+#reachabilityResult {
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 17px;
+}
+
+/* Logic Safety Check */
+
+.logic-box {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.logic-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.logic-item strong {
+    font-size: 18px;
+}
+/* Emergency Resource Finder */
+
+.resource-result {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+/* Adjacency Matrix */
+
+.matrix-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+.matrix-table th,
+.matrix-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.matrix-table th {
+    background-color: #eee;
+    font-weight: bold;
+}
+
+.matrix-table td {
+    background-color: #fafafa;
+}
+
+/* ------------------------------------------
+   ROUTE NODE HIGHLIGHTING
+   ------------------------------------------ */
+
+.node.route-node {
+    background-color: #66bb6a;
+    transform: scale(1.08);
+}
+
+
+/* Starting location */
+
+.node.start-node {
+    background-color: #f57c00;
+    transform: scale(1.15);
+}
+
+
+/* Emergency exit */
+
+.node.exit-node {
+    background-color: #2e7d32;
+}
+
+/* ------------------------------------------
+   MAP LEGEND
+   ------------------------------------------ */
+
+.legend {
+    margin-top: 25px;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.legend h3 {
+    margin-top: 0;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+/* Small circles */
+
+.legend-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+
+/* Legend colors */
+
+.start-legend {
+    background-color: #f57c00;
+}
+
+.route-legend {
+    background-color: #66bb6a;
+}
+
+.exit-legend {
+    background-color: #2e7d32;
+}
+
+
+/* Blocked path */
+
+.legend-line {
+    width: 35px;
+    height: 8px;
+    display: inline-block;
+}
+
+.blocked-legend {
+    background-color: #777;
+}
+/* ------------------------------------------
+   DISCRETE MATHEMATICS CONCEPTS
+   ------------------------------------------ */
+
+.concepts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.concept {
+    border: 1px solid #ddd;
+    padding: 18px;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.concept h3 {
+    margin-top: 0;
+}
+
+.concept p {
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+
+
+/* Mobile layout */
+
+@media (max-width: 700px) {
+
+    .concepts {
+        grid-template-columns: 1fr;
+    }
+
+}
+/* ------------------------------------------
+   SYSTEM STATUS PANEL
+   ------------------------------------------ */
+
+.status-panel {
+    width: 90%;
+    max-width: 1000px;
+    margin: 25px auto 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.status-card {
+    background-color: white;
+    padding: 18px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.status-title {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.status-card strong {
+    font-size: 18px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+    .status-panel {
+        grid-template-columns: 1fr;
+    }
+
+}
+/* ------------------------------------------
+   MATHEMATICAL REPRESENTATION
+   ------------------------------------------ */
+
+.math-box {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    line-height: 1.8;
+}
+
+.math-box h3 {
+    margin-bottom: 5px;
+}
+
+.math-box p {
+    margin-top: 5px;
+}
+
+/* ==========================================
+   FINAL UI POLISH
+   ========================================== */
+
+
+/* Smooth page appearance */
+
+html {
+    scroll-behavior: smooth;
+}
+
+
+/* Main headings */
+
+.card h2 {
+    color: #333;
+}
+
+
+/* Make buttons feel more interactive */
+
+button {
+    transition: transform 0.15s ease,
+                background-color 0.15s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+
+/* Select boxes */
+
+select {
+    background-color: white;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: 2px solid #1976d2;
+    outline-offset: 1px;
+}
+
+
+/* Better status cards */
+
+.status-card {
+    transition: transform 0.15s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+}
+
+
+/* Better resource cards */
+
+.resource {
+    transition: transform 0.15s ease;
+}
+
+.resource:hover {
+    transform: translateY(-2px);
+}
+
+
+/* Better concept cards */
+
+.concept {
+    transition: transform 0.15s ease;
+}
+
+.concept:hover {
+    transform: translateY(-2px);
+}
+
+
+/* Footer */
+
+.footer {
+    margin-top: 35px;
+    padding: 30px 20px;
+    text-align: center;
+    background-color: #222;
+    color: white;
+}
+
+.footer h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.footer p {
+    margin: 6px 0;
+    opacity: 0.85;
+}
+
+
+/* Remove excessive whitespace on small screens */
+
+@media (max-width: 700px) {
+
+    body {
+        padding-bottom: 0;
+    }
+
+    .container {
+        width: 94%;
+    }
+
+    .status-panel {
+        width: 94%;
+    }
+
+    .header h1 {
+        font-size: 26px;
+    }
+
+}
